@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>使用Python爬取1024上的图片</title>
+	<meta name="description" content="      初学Python，用几天时间看完了Python简明教程和廖雪峰的Python教程，加上一些用Python3写的爬虫的例子，开始自己动手写了一个爬虫来爬取1024的图片，下面是具体分析：      - 首先我们确定要爬取的网址：打开1024bug.com，进入子站点-&gt;图片区，我这里确定的网址为h...">
+	
+	<link rel="canonical" href="/2016/05/20/Python1024/">
+	<link rel="alternate" type="application/rss+xml" title="Zzy's Personal Website" href="/feed.xml" />
+	
+	<!-- <link rel="stylesheet" href="/css/main.css"> -->
+    
+    <link rel="stylesheet" type="text/css" href="/static/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="/static/css/index.css">
+	<script type="text/javascript" src="/static/js/jquery-1.11.1.min.js"></script>
+	<script type="text/javascript" src="/static/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="/static/css/monokai_sublime.min.css">
+	<script type="text/javascript" src="/static/js/highlight.min.js"></script>
+
+    <!--
+    <link rel="stylesheet" type="text/css" href="http://apps.bdimg.com/libs/bootstrap/3.3.0/css/bootstrap.min.css">
+	<script type="text/javascript" src="http://apps.bdimg.com/libs/jquery/2.1.1/jquery.min.js"></script>
+	<script type="text/javascript" src="http://apps.bdimg.com/libs/bootstrap/3.3.0/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="http://apps.bdimg.com/libs/highlight.js/8.4/styles/monokai_sublime.min.css">
+	<script type="text/javascript" src="http://apps.bdimg.com/libs/highlight.js/8.4/highlight.min.js"></script>
+    -->
+    
+	<script type="text/javascript" src="/static/js/index.js"></script>
+	<script>hljs.initHighlightingOnLoad();</script>
+</head>
+
+ <!--  <body data-spy="scroll" data-target="#myAffix"> -->
+  <body>
+
+    <header>
+
+<!-- navbar -->
+  <nav class="navbar navbar-inverse">
+  <div class="container">
+    <!-- Brand and toggle get grouped for better mobile display -->
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="/">Zzy's Personal Website</a>
+      <p class="navbar-text"></p>
+    </div>
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+      <ul class="nav navbar-nav navbar-right">
+
+        
+          <li>
+        
+        <a href="/">Home</a></li>
+
+        
+          
+            
+              <li>
+            
+            <a href="/projects/"><span class="glyphicon "></span> Projects</a></li>
+          
+        
+          
+            
+              <li>
+            
+            <a href="/about/"><span class="glyphicon "></span> About</a></li>
+          
+        
+          
+        
+          
+        
+      </ul>
+    </div><!-- /.navbar-collapse -->
+  </div><!-- /.container-fluid -->
+</nav>
+
+</header>
+
+    <div id="main" class="container main">
+      <div class="row">
+  <div id="myArticle" class="col-sm-9">
+    <div class="post-area post">
+      <header>
+        <h1>使用Python爬取1024上的图片</h1>
+        <p>May 20, 2016</p>
+      </header>
+      <hr>
+      <article>
+        <p>      初学Python，用几天时间看完了<a href="http://www.cnblogs.com/txw1958/archive/2012/12/10/A_Byte_of_Python3.html">Python简明教程</a>和廖雪峰的<a href="http://www.liaoxuefeng.com/wiki/0014316089557264a6b348958f449949df42a6d3a2e542c000">Python教程</a>，加上一些用Python3写的爬虫的例子，开始自己动手写了一个爬虫来爬取1024的图片，下面是具体分析：<br />
+      - 首先我们确定要爬取的网址：打开<code class="highlighter-rouge">1024bug.com</code>，进入子站点-&gt;图片区，我这里确定的网址为
+<code class="highlighter-rouge">http://cl.llluuu.me/thread0806.php?fid=16</code>（需要代理访问） 当然可能当你看到这篇博客的时候这个网址已经打不开了，重新打开主站便是，我们的目的是爬取这个网站上所有标亮的标题下的图片。<br />
+      - 观察网站的Html结构，我们发现每条目录都是这样的结构:</p>
+
+<div class="language-html highlighter-rouge"><pre class="highlight"><code><span class="nt">&lt;tr</span> <span class="na">align=</span><span class="s">"center"</span> <span class="na">class=</span><span class="s">"tr3 t_one"</span><span class="nt">&gt;&lt;/tr&gt;</span>
+<span class="nt">&lt;tr</span> <span class="na">align=</span><span class="s">"center"</span> <span class="na">class=</span><span class="s">"tr3 t_one"</span><span class="nt">&gt;&lt;/tr&gt;</span>
+<span class="nt">&lt;tr</span> <span class="na">align=</span><span class="s">"center"</span> <span class="na">class=</span><span class="s">"tr3 t_one"</span><span class="nt">&gt;&lt;/tr&gt;</span>
+</code></pre>
+</div>
+
+<p>      - 具体到每个标题的链接：</p>
+
+<div class="language-html highlighter-rouge"><pre class="highlight"><code><span class="nt">&lt;a</span> <span class="na">href=</span><span class="s">"htm_data/16/1402/1430628.html"</span> <span class="na">target=</span><span class="s">"_blank"</span> <span class="na">id=</span><span class="s">""</span><span class="nt">&gt;&lt;b&gt;&lt;font</span> <span class="na">color=</span><span class="s">"blue"</span><span class="nt">&gt;</span>图区QQ视频广告及非法图片举报贴<span class="nt">&lt;/font&gt;&lt;/b&gt;&lt;/a&gt;</span>
+<span class="nt">&lt;a</span> <span class="na">href=</span><span class="s">"htm_data/16/1605/1931337.html"</span> <span class="na">target=</span><span class="s">"_blank"</span> <span class="na">id=</span><span class="s">""</span><span class="nt">&gt;&lt;font</span> <span class="na">color=</span><span class="s">"green"</span><span class="nt">&gt;</span>和|谐[29P]<span class="nt">&lt;/font&gt;&lt;/a&gt;</span>
+<span class="nt">&lt;a</span> <span class="na">href=</span><span class="s">"htm_data/16/1605/1939712.html"</span> <span class="na">target=</span><span class="s">"_blank"</span> <span class="na">id=</span><span class="s">""</span><span class="nt">&gt;</span>和|谐[10P]<span class="nt">&lt;/a&gt;</span>
+</code></pre>
+</div>
+<p>      可以看出，我们要筛选保存的链接前面有一个与众不同的地方<code class="highlighter-rouge">&lt;font  color="green"&gt;</code>，至此我们便可以开始编写代码了。</p>
+
+<ul>
+  <li>第一步，我们获取首页中所有需要的标题的链接</li>
+</ul>
+
+<div class="language-python highlighter-rouge"><pre class="highlight"><code><span class="k">def</span> <span class="nf">getContant</span><span class="p">(</span><span class="n">Weburl</span><span class="p">):</span>
+<span class="c">#保存网站的html内容</span>
+    <span class="n">Webheader</span><span class="o">=</span> <span class="p">{</span><span class="s">'Upgrade-Insecure-Requests'</span><span class="p">:</span><span class="s">'1'</span><span class="p">,</span>
+                <span class="s">'User-Agent'</span><span class="p">:</span><span class="s">'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.103 Safari/537.36'</span><span class="p">,}</span>
+    <span class="n">req</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">Request</span><span class="p">(</span><span class="n">url</span> <span class="o">=</span> <span class="n">Weburl</span><span class="p">,</span><span class="n">headers</span><span class="o">=</span><span class="n">Webheader</span><span class="p">)</span>
+    <span class="n">respose</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">urlopen</span><span class="p">(</span><span class="n">req</span><span class="p">)</span>
+    <span class="n">_contant</span> <span class="o">=</span> <span class="n">respose</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+    <span class="n">respose</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">_contant</span><span class="p">)</span>
+    
+
+<span class="k">def</span> <span class="nf">getUrl</span><span class="p">(</span><span class="n">URL</span><span class="p">):</span>
+<span class="c">#URL = 'http://cl.llluuu.me/thread0806.php?fid=16&amp;search=&amp;page='</span>
+    <span class="c">#pageIndex = input("要下载多少页呢？\n")</span>
+    <span class="n">pageIndex</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="nb">int</span><span class="p">(</span><span class="n">pageIndex</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">Weburl</span> <span class="o">=</span> <span class="n">URL</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="c">#Weburl为首页URL，由于之前我想下载多页内容，所以用了这种写法</span>
+        <span class="n">contant</span> <span class="o">=</span> <span class="n">getContant</span><span class="p">(</span><span class="n">Weburl</span><span class="p">)</span>
+        <span class="n">comp</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="nb">compile</span><span class="p">(</span><span class="s">r'&lt;a href="htm_data.{0,30}html" target="_blank" id=""&gt;&lt;font color=g'</span><span class="p">)</span>
+        <span class="c">#匹配所有含有&lt;font color="green"&gt;的链接</span>
+        <span class="c">#这里筛选了两次</span>
+        <span class="n">urlList1</span> <span class="o">=</span> <span class="n">comp</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">contant</span><span class="p">)</span>
+        <span class="n">comp</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="nb">compile</span><span class="p">(</span><span class="s">r'a href="(.*?)"'</span><span class="p">)</span>
+        <span class="n">urlList2</span> <span class="o">=</span> <span class="n">comp</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">urlList1</span><span class="p">))</span>
+        <span class="n">urlList</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c">#因为获得的Url为htm/231202/....html的形式，要给它补全</span>
+        <span class="k">for</span> <span class="n">url1</span> <span class="ow">in</span> <span class="n">urlList2</span><span class="p">:</span>
+            <span class="n">url2</span> <span class="o">=</span> <span class="s">'http://cl.llluuu.me/'</span><span class="o">+</span><span class="n">url1</span>
+            <span class="n">urlList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">url2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">urlList</span>
+</code></pre>
+</div>
+<p>      测试一下: <code class="highlighter-rouge">UrlList = getUrl(URL)</code>  <code class="highlighter-rouge">print(UrlList)</code><br />
+      输出为 :
+<code class="highlighter-rouge">['http://cl.llluuu.me/htm_data/16/1605/1926705.html',</code>
+<code class="highlighter-rouge">'http://cl.llluuu.me/htm_data/16/1605/1934034.html', ...]</code><br />
+至此，我们成功取得的每个目录的链接的集合：<code class="highlighter-rouge">UrlList</code>
+我们还需要一个方法，来命名已经下载的图片，同时需要一个文件来保持所有已经下载的图片名字，这样在下一次运行程序时，就不会重复下载。</p>
+
+<p>下面是一些方法：</p>
+
+<p>1.获取图片下载地址（需要再次使用正则匹配）：</p>
+
+<pre><code class="language-Python">for url1 in UrlList:
+        contant = getContant(url1)
+        comp = re.compile(r'&lt;input src=\\\'https(.*?)\\\' type=\\\'i')
+        url2 = comp.findall(contant)
+        for url3 in url2:
+            url3 = 'https'+url3
+            print(url3)
+</code></pre>
+
+<p>2.命名要下载的图片：</p>
+
+<div class="language-python highlighter-rouge"><pre class="highlight"><code><span class="k">def</span> <span class="nf">finalName</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">targetDir</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">targetDir</span><span class="p">)</span>
+    <span class="n">pos</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">rindex</span><span class="p">(</span><span class="s">'/'</span><span class="p">)</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">targetDir</span><span class="p">,</span> <span class="n">path</span><span class="p">[</span><span class="n">pos</span><span class="o">+</span><span class="mi">1</span><span class="p">:])</span>
+    <span class="k">return</span> <span class="n">t</span>
+</code></pre>
+</div>
+
+<p>3.CallBack函数，显示下载进度:</p>
+
+<div class="language-python highlighter-rouge"><pre class="highlight"><code><span class="k">def</span> <span class="nf">callback</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="p">):</span>
+    <span class="n">per</span> <span class="o">=</span> <span class="mf">100.0</span><span class="o">*</span><span class="n">a</span><span class="o">*</span><span class="n">b</span><span class="o">/</span><span class="n">c</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">per</span><span class="o">&gt;</span><span class="mi">100</span><span class="p">):</span>
+        <span class="n">per</span> <span class="o">=</span> <span class="mi">100</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">"</span><span class="si">%.2</span><span class="s">f</span><span class="si">%%</span><span class="s">"</span><span class="o">%</span><span class="n">per</span><span class="p">,</span><span class="n">end</span><span class="o">=</span><span class="s">'</span><span class="se">\r</span><span class="s">'</span><span class="p">)</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+</code></pre>
+</div>
+
+<p>4.打开一个DownloadList文件来保存已经下载的图片链接：</p>
+
+<div class="language-python highlighter-rouge"><pre class="highlight"><code><span class="n">filename</span> <span class="o">=</span> <span class="s">'downloadList.txt'</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">'ab'</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+<span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">'载入目录中........'</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">'rb'</span><span class="p">)</span> <span class="k">as</span> <span class="n">files</span><span class="p">:</span>
+        <span class="n">downloadList</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">files</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">'新建了目录'</span><span class="p">)</span>
+    <span class="n">downloadList</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">'wb'</span><span class="p">)</span> <span class="k">as</span> <span class="n">files</span><span class="p">:</span>
+        <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">downloadList</span><span class="p">,</span> <span class="n">files</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">'rb'</span><span class="p">)</span> <span class="k">as</span> <span class="n">files</span><span class="p">:</span>
+        <span class="n">downloadList</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">files</span><span class="p">)</span>
+</code></pre>
+</div>
+
+<p>嗯…说的不是很清楚，下面是完整的代码：</p>
+
+<div class="language-python highlighter-rouge"><pre class="highlight"><code><span class="kn">import</span> <span class="nn">urllib.request</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
+<span class="n">targetDir</span> <span class="o">=</span> <span class="s">r"F:</span><span class="err">\</span><span class="s">Python</span><span class="err">\</span><span class="s">羞羞的图片"</span>  <span class="c">#文件保存路径</span>
+<span class="k">def</span> <span class="nf">finalName</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">targetDir</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">targetDir</span><span class="p">)</span>
+    <span class="n">pos</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">rindex</span><span class="p">(</span><span class="s">'/'</span><span class="p">)</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">targetDir</span><span class="p">,</span> <span class="n">path</span><span class="p">[</span><span class="n">pos</span><span class="o">+</span><span class="mi">1</span><span class="p">:])</span>
+    <span class="k">return</span> <span class="n">t</span>
+<span class="k">def</span> <span class="nf">callback</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="p">):</span>
+    <span class="n">per</span> <span class="o">=</span> <span class="mf">100.0</span><span class="o">*</span><span class="n">a</span><span class="o">*</span><span class="n">b</span><span class="o">/</span><span class="n">c</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">per</span><span class="o">&gt;</span><span class="mi">100</span><span class="p">):</span>
+        <span class="n">per</span> <span class="o">=</span> <span class="mi">100</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">"</span><span class="si">%.2</span><span class="s">f</span><span class="si">%%</span><span class="s">"</span><span class="o">%</span><span class="n">per</span><span class="p">,</span><span class="n">end</span><span class="o">=</span><span class="s">'</span><span class="se">\r</span><span class="s">'</span><span class="p">)</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">getContant</span><span class="p">(</span><span class="n">Weburl</span><span class="p">):</span>
+    <span class="n">Webheader</span><span class="o">=</span> <span class="p">{</span><span class="s">'Upgrade-Insecure-Requests'</span><span class="p">:</span><span class="s">'1'</span><span class="p">,</span>
+                <span class="s">'User-Agent'</span><span class="p">:</span><span class="s">'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.103 Safari/537.36'</span><span class="p">,}</span>
+    <span class="n">req</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">Request</span><span class="p">(</span><span class="n">url</span> <span class="o">=</span> <span class="n">Weburl</span><span class="p">,</span><span class="n">headers</span><span class="o">=</span><span class="n">Webheader</span><span class="p">)</span>
+    <span class="n">respose</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">urlopen</span><span class="p">(</span><span class="n">req</span><span class="p">)</span>
+    <span class="n">_contant</span> <span class="o">=</span> <span class="n">respose</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+    <span class="n">respose</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">_contant</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">getUrl</span><span class="p">(</span><span class="n">URL</span><span class="p">):</span>
+    <span class="c">#pageIndex = input("要下载多少页呢？\n")</span>
+    <span class="n">pageIndex</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="nb">int</span><span class="p">(</span><span class="n">pageIndex</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">Weburl</span> <span class="o">=</span> <span class="n">URL</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="c">#获取每大页的URL</span>
+        <span class="n">contant</span> <span class="o">=</span> <span class="n">getContant</span><span class="p">(</span><span class="n">Weburl</span><span class="p">)</span>
+        <span class="n">comp</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="nb">compile</span><span class="p">(</span><span class="s">r'&lt;a href="htm_data.{0,30}html" target="_blank" id=""&gt;&lt;font color=g'</span><span class="p">)</span>
+        <span class="n">urlList1</span> <span class="o">=</span> <span class="n">comp</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">contant</span><span class="p">)</span>
+        <span class="n">comp</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="nb">compile</span><span class="p">(</span><span class="s">r'a href="(.*?)"'</span><span class="p">)</span>
+        <span class="n">urlList2</span> <span class="o">=</span> <span class="n">comp</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">urlList1</span><span class="p">))</span>
+        <span class="n">urlList</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">url1</span> <span class="ow">in</span> <span class="n">urlList2</span><span class="p">:</span>
+            <span class="n">url2</span> <span class="o">=</span> <span class="s">'http://cl.llluuu.me/'</span><span class="o">+</span><span class="n">url1</span>
+            <span class="n">urlList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">url2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">urlList</span>
+<span class="k">def</span> <span class="nf">download</span><span class="p">(</span><span class="n">UrlList</span><span class="p">):</span>
+    <span class="n">cal</span><span class="o">=</span> <span class="mi">1</span>
+    <span class="n">pas</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">fail</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">filename</span> <span class="o">=</span> <span class="s">'downloadList.txt'</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">'ab'</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">'载入目录中........'</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">'rb'</span><span class="p">)</span> <span class="k">as</span> <span class="n">files</span><span class="p">:</span>
+            <span class="n">downloadList</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">files</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">'新建了目录'</span><span class="p">)</span>
+        <span class="n">downloadList</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">'wb'</span><span class="p">)</span> <span class="k">as</span> <span class="n">files</span><span class="p">:</span>
+            <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">downloadList</span><span class="p">,</span> <span class="n">files</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">'rb'</span><span class="p">)</span> <span class="k">as</span> <span class="n">files</span><span class="p">:</span>
+            <span class="n">downloadList</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">files</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">url1</span> <span class="ow">in</span> <span class="n">UrlList</span><span class="p">:</span>
+        <span class="n">contant</span> <span class="o">=</span> <span class="n">getContant</span><span class="p">(</span><span class="n">url1</span><span class="p">)</span>
+        <span class="n">comp</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="nb">compile</span><span class="p">(</span><span class="s">r'&lt;input src=</span><span class="se">\\\'</span><span class="s">https(.*?)</span><span class="se">\\\'</span><span class="s"> type=</span><span class="se">\\\'</span><span class="s">i'</span><span class="p">)</span>
+        <span class="n">url2</span> <span class="o">=</span> <span class="n">comp</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">contant</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">url3</span> <span class="ow">in</span> <span class="n">url2</span><span class="p">:</span>
+            <span class="n">url3</span> <span class="o">=</span> <span class="s">'https'</span><span class="o">+</span><span class="n">url3</span>
+            <span class="k">print</span><span class="p">(</span><span class="n">url3</span><span class="p">)</span>
+            <span class="k">global</span> <span class="n">cal</span>
+            <span class="k">global</span> <span class="n">pas</span>
+            <span class="k">global</span> <span class="n">downloadList</span>
+            <span class="k">global</span> <span class="n">fail</span>
+            <span class="n">pos</span> <span class="o">=</span> <span class="n">url3</span><span class="o">.</span><span class="n">rindex</span><span class="p">(</span><span class="s">'/'</span><span class="p">)</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">url3</span><span class="p">[</span><span class="n">pos</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:]</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">downloadList</span><span class="p">:</span>
+                    <span class="k">print</span><span class="p">(</span><span class="s">'正在下载第'</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">cal</span><span class="p">)</span> <span class="o">+</span> <span class="s">'张图片'</span><span class="p">)</span>
+                    <span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">urlretrieve</span><span class="p">(</span><span class="n">url3</span><span class="p">,</span> <span class="n">finalName</span><span class="p">(</span><span class="n">url3</span><span class="p">),</span> <span class="n">callback</span><span class="p">)</span>
+                    <span class="n">cal</span><span class="o">+=</span><span class="mi">1</span>
+                    <span class="n">downloadList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+                    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s">'F:/python/downloadList.txt'</span><span class="p">,</span> <span class="s">'wb'</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                        <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">downloadList</span><span class="p">,</span><span class="n">f</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">print</span><span class="p">(</span><span class="s">'图片已经存在，已跳过'</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">pas</span><span class="p">)</span><span class="o">+</span><span class="s">'张'</span><span class="p">)</span>
+                    <span class="n">pas</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">except</span> <span class="n">urllib</span><span class="o">.</span><span class="n">error</span><span class="o">.</span><span class="n">URLError</span><span class="p">:</span>
+                <span class="k">print</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">fail</span><span class="p">)</span><span class="o">+</span><span class="s">'张下载失败'</span><span class="p">)</span>
+<span class="n">URL</span> <span class="o">=</span> <span class="s">'http://cl.llluuu.me/thread0806.php?fid=16&amp;search=&amp;page='</span>
+<span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="s">'cls'</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s">'爬虫启动中，爬取网址为：'</span><span class="o">+</span><span class="n">URL</span><span class="p">)</span>
+<span class="n">UrlList</span> <span class="o">=</span> <span class="n">getUrl</span><span class="p">(</span><span class="n">URL</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">UrlList</span><span class="p">)</span>
+<span class="n">download</span><span class="p">(</span><span class="n">UrlList</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s">"所有标亮内容已经全部下载"</span><span class="p">)</span>
+</code></pre>
+</div>
+
+      </article>
+      <hr>
+        <div class="no_bdsharebuttonbox">
+            <a href="#" class="bds_more" data-cmd="more"></a>
+            <a href="#" class="bds_tsina" data-cmd="tsina" title="分享到新浪微博"></a>
+            <a href="#" class="bds_weixin" data-cmd="weixin" title="分享到微信"></a>
+            <a href="#" class="bds_douban" data-cmd="douban" title="分享到豆瓣网"></a>
+            <a href="#" class="bds_fbook" data-cmd="fbook" title="Share to Facebook"></a>
+            <a href="#" class="bds_copy" data-cmd="copy" title="分享到复制网址"></a>
+        </div>
+        <script>
+            window._bd_share_config={"common":{"bdSnsKey":{},"bdText":"","bdMini":"2","bdMiniList":false,"bdPic":"","bdStyle":"1","bdSize":"24"},"share":{}};with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='http://bdimg.share.baidu.com/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];
+        </script>
+    </div>
+	
+    <!-- duoshuo.com javascript include code. -->    
+    
+      <div class="post-area post comment">
+        <div class="ds-thread" data-thread-key="/2016/05/20/Python1024" data-title="使用Python爬取1024上的图片" data-url="https://ncuzzy.github.io//2016/05/20/Python1024/"></div>
+      </div>
+	  <script type="text/javascript">
+		var duoshuoQuery = {short_name:"ncuzzy"};
+		(function() {
+		  var ds = document.createElement('script');
+		  ds.type = 'text/javascript';ds.async = true;
+		  ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+		  ds.charset = 'UTF-8';
+		  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(ds);
+		})();
+	  </script>
+	
+    <!-- disqus.com javascript include code. -->
+	
+    
+  </div>
+  
+  <div id="content" class="col-sm-3">
+    <!-- <div id="myAffix" class="shadow-bottom-center hidden-xs" data-spy="affix" data-offset-top="0" data-offset-bottom="-20"> -->
+    <div id="myAffix" class="shadow-bottom-center hidden-xs" >
+      <div class="categories-list-header">
+        Content
+      </div>
+      <div class="content-text"></div>
+    </div>
+  </div>
+  
+</div>
+    </div>
+
+    
+    <div id="top" data-toggle="tooltip" data-placement="left" title="back to top">
+      <a href="javascript:;">
+        <div class="arrow"></div>
+        <div class="stick"></div>
+      </a>
+    </div>
+
+    <footer class="">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12">
+        <a href="mailto:zzygit@gmail.com"><span class="glyphicon glyphicon-envelope"></span> zzygit@gmail.com</a>
+        <span class="point"> · </span>
+        
+          <a href="https://github.com/ncuzzy">
+            <span class="icon">
+              <svg viewBox="0 0 16 16">
+                <path fill="#aaa" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/>
+              </svg>
+            </span>
+            Github
+            <!-- <span>ncuzzy</span> -->
+          </a>
+          
+          <span class="point"> · </span>
+          <span><a href="https://github.com/ncuzzy/ncuzzy.github.io_posts/2016-05-20-Python1024.md">View source</a></span>
+          <span class="point"> · </span>
+          <span><a class="newpost" href="javascript:;">New post</a></span>
+		  <span class="point"> · </span>
+          <span><a href="/feed.xml">RSS</a></span>
+          <span class="point"> · </span>
+          <span>&copy; 2015 LiXizhi</span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+    <script type="text/javascript">
+    function OnClickNewPost()
+    {
+        var title = prompt("Please enter title of your post");
+        if (title!=null){
+            title = title.replace(" ", "-");
+            var currentdate = new Date();
+            var urlNewPage = "https://github.com/LiXizhi/LiXizhi.github.io/new/master?filename=_posts/" 
+                + currentdate.getFullYear() + "-" + (currentdate.getMonth()+1) + "-" + currentdate.getDate() + "-" + title + ".md";
+                
+            var defaultText =  [
+                '---',
+                'layout: post',
+                'comments: true',
+                'categories: diary',
+                '---',
+                '## Title',
+                'text'
+                ].join('\n');
+            urlNewPage += "&value=" + encodeURIComponent(defaultText);
+            window.open(urlNewPage);
+        }
+    }
+    
+    $(function() {
+      // CreateNewPostLinks
+      $('.newpost').each(function(){
+          $(this).click(OnClickNewPost);
+      });
+    });
+</script>
+  
+  </body>
+</html>

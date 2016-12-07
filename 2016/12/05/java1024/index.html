@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>用Java再次写个1024的爬虫</title>
+	<meta name="description" content="还有什么爬虫能比爬1024更刺激呢~爬取图片的用Python写过了，这次用Java写一个爬小说的。原本想写一个功能全面的能爬整站的爬虫，但都只是一些正则表达式的区别，写到后面慢慢失去了写下去的兴趣，毕竟这东西只能自己一个人写着玩。不过整体的框架写完了，用Java写比起用Python还是舒服多了的。">
+	
+	<link rel="canonical" href="/2016/12/05/java1024/">
+	<link rel="alternate" type="application/rss+xml" title="Zzy's Personal Website" href="/feed.xml" />
+	
+	<!-- <link rel="stylesheet" href="/css/main.css"> -->
+    
+    <link rel="stylesheet" type="text/css" href="/static/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="/static/css/index.css">
+	<script type="text/javascript" src="/static/js/jquery-1.11.1.min.js"></script>
+	<script type="text/javascript" src="/static/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="/static/css/monokai_sublime.min.css">
+	<script type="text/javascript" src="/static/js/highlight.min.js"></script>
+
+    <!--
+    <link rel="stylesheet" type="text/css" href="http://apps.bdimg.com/libs/bootstrap/3.3.0/css/bootstrap.min.css">
+	<script type="text/javascript" src="http://apps.bdimg.com/libs/jquery/2.1.1/jquery.min.js"></script>
+	<script type="text/javascript" src="http://apps.bdimg.com/libs/bootstrap/3.3.0/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="http://apps.bdimg.com/libs/highlight.js/8.4/styles/monokai_sublime.min.css">
+	<script type="text/javascript" src="http://apps.bdimg.com/libs/highlight.js/8.4/highlight.min.js"></script>
+    -->
+    
+	<script type="text/javascript" src="/static/js/index.js"></script>
+	<script>hljs.initHighlightingOnLoad();</script>
+</head>
+
+ <!--  <body data-spy="scroll" data-target="#myAffix"> -->
+  <body>
+
+    <header>
+
+<!-- navbar -->
+  <nav class="navbar navbar-inverse">
+  <div class="container">
+    <!-- Brand and toggle get grouped for better mobile display -->
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="/">Zzy's Personal Website</a>
+      <p class="navbar-text"></p>
+    </div>
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+      <ul class="nav navbar-nav navbar-right">
+
+        
+          <li>
+        
+        <a href="/">Home</a></li>
+
+        
+          
+            
+              <li>
+            
+            <a href="/projects/"><span class="glyphicon "></span> Projects</a></li>
+          
+        
+          
+            
+              <li>
+            
+            <a href="/about/"><span class="glyphicon "></span> About</a></li>
+          
+        
+          
+        
+          
+        
+      </ul>
+    </div><!-- /.navbar-collapse -->
+  </div><!-- /.container-fluid -->
+</nav>
+
+</header>
+
+    <div id="main" class="container main">
+      <div class="row">
+  <div id="myArticle" class="col-sm-9">
+    <div class="post-area post">
+      <header>
+        <h1>用Java再次写个1024的爬虫</h1>
+        <p>Dec 5, 2016</p>
+      </header>
+      <hr>
+      <article>
+        <p>还有什么爬虫能比爬1024更刺激呢~爬取图片的用Python写过了，这次用Java写一个爬小说的。原本想写一个功能全面的能爬整站的爬虫，但都只是一些正则表达式的区别，写到后面慢慢失去了写下去的兴趣，毕竟这东西只能自己一个人写着玩。不过整体的框架写完了，用Java写比起用Python还是舒服多了的。</p>
+
+<h3 id="section">1. 结构设计</h3>
+<p>首先我们先把爬虫大体的框架想好，软件用的PowerDesigner，不要吐槽各种地方乱用，我只是把它当成一个画板qwq~<br />
+User Case图</p>
+
+<p><img src="http://o9py5j033.bkt.clouddn.com/usercase.png" alt="" /><br />
+类图</p>
+
+<p><img src="http://o9py5j033.bkt.clouddn.com/class.png" alt="" /></p>
+
+<h3 id="section-1">2. 基类</h3>
+<p>先把基类撸出来</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>public class urlHandle {
+    private String url;
+    private String normalRegex;
+    private String urlRegex;
+    private String titleRegex;
+    private String context;
+    private String domain;
+    
+    urlHandle(){
+        url = "";
+        normalRegex = "";
+        urlRegex = "";
+        titleRegex = "";
+        context = "";
+        domain = "";
+    }
+    
+    protected void setUrl(String s){
+        url = s;
+    }
+    protected void setNormalRegex(String s){
+        normalRegex = s;
+    }
+    protected void setUrlRegex(String s){
+        urlRegex = s;
+    }
+    protected void setTitleRegex(String s){
+        titleRegex = s;
+    }
+    protected void showContext(){
+        System.out.println(context);
+    }
+    protected void setContent() throws Exception{
+        assert(url!="");
+        this.context = this.getContent(url); 
+    }
+    protected String showDomainName(){
+        return domain;
+    }
+    //添加几个键值，让爬虫能顺利打开目标网站
+    protected String getContent(String s) throws Exception{
+        URL url = new URL(s);
+        String Context = "";
+        URLConnection conn = url.openConnection();
+        conn.setRequestProperty("Connection", "Keep-Alive"); 
+        conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Appl"
+                * "eWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.99 Safari/537.36");
+        conn.setRequestProperty("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"); 
+        conn.connect();
+        InputStream is = conn.getInputStream();
+        Context = IOUtils.toString(is, "gb2312");
+        is.close();
+        return Context;
+    };
+    
+    /*图片，小说，电影，页面的结构都差不多，三个正则足够提取出需要的内容了
+    **为了省去每个类重写这个方法的代码，直接写在基类里
+    */regex1 提取整个&lt;a&gt;&lt;/a&gt;  regex2提取url regex3提取标题
+    protected Map&lt;String,String&gt; getMap(){
+        assert(domain!="" &amp;&amp; context!="");
+        String str = context;
+        StringBuffer strTmp = new StringBuffer();
+        Map&lt;String, String&gt; map = new HashMap&lt;String, String&gt;();
+        Pattern regex1Hander = Pattern.compile(normalRegex);
+        Pattern urlHander = Pattern.compile(urlRegex);
+        Pattern titleHander = Pattern.compile(titleRegex);
+        Matcher m = regex1Hander.matcher(str);
+        while(m.find()){
+            strTmp.append(m.group());
+        };
+        Matcher url = urlHander.matcher(strTmp);
+        Matcher title = titleHander.matcher(strTmp);
+        while(url.find()&amp;&amp;title.find()){
+            map.put(domain+url.group(),title.group());
+        }
+        return map;
+    };
+    //原本想将访问过的URL存到数据库里面，所以多了这几个函数。
+    protected boolean isExist(){
+        
+        return true;
+    };
+    
+    protected boolean Download(){
+    
+        return true;
+    };
+    
+    protected boolean Save(){
+    
+        return true;
+    };
+    //获取一级域名
+    protected boolean getDomainName(){
+        assert(url!=null&amp;&amp;url!="");
+        //String s = "http://xiaohai.ga/thread0806.php?fid=20";
+        Pattern p = Pattern.compile("\\w+?://\\w+?\\.\\w{1,5}/");
+        Matcher m = p.matcher(url);
+        if(m.find()){
+            domain = m.group();
+            return true;
+        }   
+        else 
+            return false;
+    }
+    //测试方法，读取手动保存的网页测试正则，每次都连接太慢了
+    public static StringBuffer readFile(String fileName) throws FileNotFoundException {
+        File file = new File(fileName);
+        StringBuffer str = new StringBuffer();
+        String tmp = "";
+        Scanner input = new Scanner(file);
+        while (input.hasNext()) {
+            tmp = input.nextLine();
+            str.append(tmp);
+        }
+        input.close();
+        return str;
+    }
+}
+</code></pre>
+</div>
+
+<h3 id="fictionsearch">3. FictionSearch</h3>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>public class FictionSearch extends urlHandle{
+    FictionSearch(){
+        super();
+        //定义了小说页面需要的正则
+        super.setNormalRegex("&lt;a href=\"htm.{0,50}id=\"\"&gt;[\u4e00-\u9fa5]+?&lt;");
+        super.setUrlRegex("htm_data/[0-9]+?/[0-9]+?/[0-9]+?\\.html");
+        super.setTitleRegex("[\u4e00-\u9fa5]{1,50}");
+    }
+}  
+</code></pre>
+</div>
+
+<h3 id="fictiondownload">4. FictionDownload</h3>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>public class FictionDownload extends FictionSearch{
+    private Map&lt;String,String&gt; map = new HashMap&lt;&gt;();
+    
+    FictionDownload() throws Exception{
+        //没有指定页面URL
+        System.out.println("No url intended");
+    }
+    
+    FictionDownload(String s) throws Exception{
+        super();
+        super.setUrl(s);
+        super.setContent();
+        super.getDomainName();
+        map = super.getMap();
+    }
+    
+    public void download() throws Exception{
+        for(String url:map.keySet()){
+            if(!isExist(url)){
+                String title = map.get(url);
+                String path = "Fictions/"+title+".txt";
+                String fictionText = getTotalFiction(url);
+                File file = new File(path);
+                //测试用，因为没有写isExist...
+                if(file.exists())
+                    System.out.println("Something Wrong,Fiction rewrited");
+                file.createNewFile();
+                BufferedWriter bw = new BufferedWriter(new FileWriter(file.getAbsoluteFile()));
+                bw.write(fictionText);
+                //关闭时强制将缓冲区数据写入内存，否则需要加上bw.flush();
+                bw.close();
+                System.out.println("文件保存在: "+file.getAbsolutePath());
+            }
+        }
+    }
+    
+    protected boolean isExist(String url){
+        return false;
+    }
+    
+    private String getTid(String url){
+        String[] t = url.replace(".html", "").replaceAll(".htm", "").split("/");
+        String tid = t[t.length-1];
+        return tid;
+    }
+    
+    private String getTotalFiction(String url) throws Exception{
+        String tid = this.getTid(url);
+        String FirstPageText = getFictionText(url);
+        String PageUrl = "";
+        StringBuffer FictionText = new StringBuffer(FirstPageText);
+        String domain = super.showDomainName();
+        int i = 2;
+        while(true){
+            /*当时直接认为小说内容的第二页会和第一页是一样的结构，结果表面我还是太天真了,所以我这样是获取不到第二页的小说内容的，以后有心情再完善吧*/
+            PageUrl = domain+"read.php?tid="+tid+"&amp;page="+i;
+            System.out.println(PageUrl);
+            String pageText = this.getFictionText(PageUrl);
+            if(pageText.length()&lt;10)
+                break;
+            else{
+                FictionText.append(pageText);
+                i++;
+            }
+        }
+        return FictionText.toString();
+    }
+    
+    private String getFictionText(String url) throws Exception{
+        String Page = super.getContent(url);
+        String ParaText = "";
+        String PageText = "";
+        Page = Page.replaceAll("&lt;br&gt;", "br");
+        Page = Page.replaceAll("&amp;nbsp;", "");
+        Pattern p = Pattern.compile("tpc_content do_not_catch\"&gt;(.*?)&lt;");
+        Matcher m = p.matcher(Page);
+        while(m.find()){
+            ParaText = m.group(1);
+            if(ParaText.length()&lt;20)
+                continue;
+            else
+                PageText += ParaText;
+        }
+        PageText = PageText.replaceAll("br", System.getProperty("line.separator"));
+        return PageText;
+    }
+} ### Main  
+
+public class Main {
+    public static void main(String[] args) throws Exception {
+        String ss = "http://xiaohai.ga/thread0806.php?fid=20";
+        FictionDownload fd = new FictionDownload(ss);
+        try {
+            fd.download();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+</code></pre>
+</div>
+
+<h3 id="section-2">结果</h3>
+<p>好吧这是唯一有看点的东西了…没有开线程，跟之前Python爬图片的比起来真的好慢，因为我在图书馆借了<code class="highlighter-rouge">Java并发编程实战</code>，然而还没翻开…
+<img src="http://o9py5j033.bkt.clouddn.com/fictuon.png" alt="" /></p>
+
+<h3 id="section-3">一点点总结</h3>
+<p>学编程，最好是不要Copy and Paste from Stackoverflow…<br />
+对语言有个大体的了解，遇到要使用的方法，类，库，先去看看官方文档，由大到小，由浅到深，很多博客其实看起来没有官方的舒服，比如Java API Docs，Beautiful Soup Documentation ，JavaFX API Documentation，查起来方便，结构也有序。
+没事多写点有意思的小程序，保持热情。<br />
+期末了，希望有机会能把那个获取斗鱼弹幕获取的程序写了，曾经用C++写过但连接成功登入成功获取数据失败，很无奈啊，上了一个学期计网，争取用Java把它搞定。</p>
+
+      </article>
+      <hr>
+        <div class="no_bdsharebuttonbox">
+            <a href="#" class="bds_more" data-cmd="more"></a>
+            <a href="#" class="bds_tsina" data-cmd="tsina" title="分享到新浪微博"></a>
+            <a href="#" class="bds_weixin" data-cmd="weixin" title="分享到微信"></a>
+            <a href="#" class="bds_douban" data-cmd="douban" title="分享到豆瓣网"></a>
+            <a href="#" class="bds_fbook" data-cmd="fbook" title="Share to Facebook"></a>
+            <a href="#" class="bds_copy" data-cmd="copy" title="分享到复制网址"></a>
+        </div>
+        <script>
+            window._bd_share_config={"common":{"bdSnsKey":{},"bdText":"","bdMini":"2","bdMiniList":false,"bdPic":"","bdStyle":"1","bdSize":"24"},"share":{}};with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='http://bdimg.share.baidu.com/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];
+        </script>
+    </div>
+	
+    <!-- duoshuo.com javascript include code. -->    
+    
+      <div class="post-area post comment">
+        <div class="ds-thread" data-thread-key="/2016/12/05/java1024" data-title="用Java再次写个1024的爬虫" data-url="https://ncuzzy.github.io//2016/12/05/java1024/"></div>
+      </div>
+	  <script type="text/javascript">
+		var duoshuoQuery = {short_name:"ncuzzy"};
+		(function() {
+		  var ds = document.createElement('script');
+		  ds.type = 'text/javascript';ds.async = true;
+		  ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+		  ds.charset = 'UTF-8';
+		  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(ds);
+		})();
+	  </script>
+	
+    <!-- disqus.com javascript include code. -->
+	
+    
+  </div>
+  
+  <div id="content" class="col-sm-3">
+    <!-- <div id="myAffix" class="shadow-bottom-center hidden-xs" data-spy="affix" data-offset-top="0" data-offset-bottom="-20"> -->
+    <div id="myAffix" class="shadow-bottom-center hidden-xs" >
+      <div class="categories-list-header">
+        Content
+      </div>
+      <div class="content-text"></div>
+    </div>
+  </div>
+  
+</div>
+    </div>
+
+    
+    <div id="top" data-toggle="tooltip" data-placement="left" title="back to top">
+      <a href="javascript:;">
+        <div class="arrow"></div>
+        <div class="stick"></div>
+      </a>
+    </div>
+
+    <footer class="">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12">
+        <a href="mailto:zzygit@gmail.com"><span class="glyphicon glyphicon-envelope"></span> zzygit@gmail.com</a>
+        <span class="point"> · </span>
+        
+          <a href="https://github.com/ncuzzy">
+            <span class="icon">
+              <svg viewBox="0 0 16 16">
+                <path fill="#aaa" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/>
+              </svg>
+            </span>
+            Github
+            <!-- <span>ncuzzy</span> -->
+          </a>
+          
+          <span class="point"> · </span>
+          <span><a href="https://github.com/ncuzzy/ncuzzy.github.io_posts/2016-12-5-java1024.md">View source</a></span>
+          <span class="point"> · </span>
+          <span><a class="newpost" href="javascript:;">New post</a></span>
+		  <span class="point"> · </span>
+          <span><a href="/feed.xml">RSS</a></span>
+          <span class="point"> · </span>
+          <span>&copy; 2015 LiXizhi</span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+    <script type="text/javascript">
+    function OnClickNewPost()
+    {
+        var title = prompt("Please enter title of your post");
+        if (title!=null){
+            title = title.replace(" ", "-");
+            var currentdate = new Date();
+            var urlNewPage = "https://github.com/LiXizhi/LiXizhi.github.io/new/master?filename=_posts/" 
+                + currentdate.getFullYear() + "-" + (currentdate.getMonth()+1) + "-" + currentdate.getDate() + "-" + title + ".md";
+                
+            var defaultText =  [
+                '---',
+                'layout: post',
+                'comments: true',
+                'categories: diary',
+                '---',
+                '## Title',
+                'text'
+                ].join('\n');
+            urlNewPage += "&value=" + encodeURIComponent(defaultText);
+            window.open(urlNewPage);
+        }
+    }
+    
+    $(function() {
+      // CreateNewPostLinks
+      $('.newpost').each(function(){
+          $(this).click(OnClickNewPost);
+      });
+    });
+</script>
+  
+  </body>
+</html>
