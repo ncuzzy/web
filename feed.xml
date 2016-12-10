@@ -5,9 +5,112 @@
     <description>Zzy&#39;s Ideas &amp; Blogs</description>
     <link>/</link>
     <atom:link href="/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Wed, 07 Dec 2016 16:56:24 +0800</pubDate>
-    <lastBuildDate>Wed, 07 Dec 2016 16:56:24 +0800</lastBuildDate>
+    <pubDate>Sat, 10 Dec 2016 16:25:53 +0800</pubDate>
+    <lastBuildDate>Sat, 10 Dec 2016 16:25:53 +0800</lastBuildDate>
     <generator>Jekyll v3.1.3</generator>
+    
+      <item>
+        <title>期末到了--最后两周OpenGL从入门到放弃</title>
+        <description>&lt;h3 id=&quot;learnopenglwwwlearnopenglcom--httpbullteachercom&quot;&gt;学习资料：&lt;a href=&quot;www.learnOpenGL.com&quot;&gt;learnOpenGL&lt;/a&gt; 对应的有 &lt;a href=&quot;http://bullteacher.com/&quot;&gt;中文版&lt;/a&gt;&lt;/h3&gt;
+&lt;p&gt;还剩两周就要考OpenGL了，上课没好好听讲，心塞。&lt;/p&gt;
+
+&lt;p&gt;从我个人的理解来看，OpenGL称为一个状态机，表现了对原始数据经过若干道的工序，分别对其进行加工，最终输出。&lt;/p&gt;
+
+&lt;p&gt;一个最基本的例子，画一个三角形：&lt;br /&gt;
+&lt;code class=&quot;highlighter-rouge&quot;&gt;顶点 --&amp;gt;  OpenGL内部可以处理的顶点(坐标在[-1，1]区间) --&amp;gt; 指定每个顶点的颜色 --&amp;gt; 绘制图像&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;其中将顶点转换成OpenGL可以使用的顶点，是顶点着色器(Vertex Shader)的工作，为每个顶点指定颜色，是片段着色器的工作(Fragment Shader)。这里说的不是那么准确，实际上对于原始数据的处理，经过了这些着色器：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://learnopengl.com/img/getting-started/pipeline.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;那么这两个着色器要怎么使用呢？着色器代码是一门特定的语言：&lt;code class=&quot;highlighter-rouge&quot;&gt;GLSL&lt;/code&gt;。 &lt;br /&gt;
+这是一种类C的语言，先来看一下简单的顶点着色器代码:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;#version 330 core 
+layout (location = 0) in vec3 position; 
+void main()
+{
+    gl_Position = vec4(position.x, position.y, position.z, 1.0);
+}  
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;version 330&lt;/code&gt;表示OpenGL版本3.3，&lt;code class=&quot;highlighter-rouge&quot;&gt;core&lt;/code&gt;表示启用core profile模式。&lt;code class=&quot;highlighter-rouge&quot;&gt;layout (location = 0)&lt;/code&gt;给这个定义的变量&lt;code class=&quot;highlighter-rouge&quot;&gt;position&lt;/code&gt;一个索引，之后会用到。&lt;code class=&quot;highlighter-rouge&quot;&gt;in&lt;/code&gt;表示输入的变量,&lt;code class=&quot;highlighter-rouge&quot;&gt;out&lt;/code&gt;表示输出的变量,&lt;code class=&quot;highlighter-rouge&quot;&gt;vec3&lt;/code&gt;为数据类型(关键字),表示一个三维向量。&lt;code class=&quot;highlighter-rouge&quot;&gt;gl_Position = vec4(position.x, position.y, position.z, 1.0);&lt;/code&gt;表示定义一个&lt;code class=&quot;highlighter-rouge&quot;&gt;gl_Position&lt;/code&gt;，它是一个&lt;code class=&quot;highlighter-rouge&quot;&gt;vec4&lt;/code&gt;的四维向量，四维分别为&lt;code class=&quot;highlighter-rouge&quot;&gt;position.x&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;position.y&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;position.z, 1.0&lt;/code&gt;。&lt;br /&gt;
+这样，我们就把一个从外部输入的三维向量，转换成OpenGL可以处理的向量，虽然这里我们没有对输入向量做什么改变。&lt;br /&gt;
+假设我们有一个数组表示三维空间中的三个点：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;GLfloat vertices[] = {
+    -0.5f, -0.5f, 0.0f,//第一个点
+     0.5f, -0.5f, 0.0f,//第二个点
+     0.0f,  0.5f, 0.0f //第三个点
+};  
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;我们就可以这个顶点数组传入顶点着色器，如果坐标不是标准坐标(大小位于[-1,1])，那么就需要在顶点着色器中进行改变。&lt;br /&gt;
+可惜顶点着色器不能简单从一个顶点数组获取值，我们需要将这个顶点数组存入内存中，为了效率我们将这个数组存入显存，使用一个称为&lt;code class=&quot;highlighter-rouge&quot;&gt;顶点缓冲对象VBO&lt;/code&gt;的对象来管理这个内存，在创建它之前，有一些东西需要说明：&lt;br /&gt;
+1.在OpenGL中，对象的表现形式为一串无符号整形数据，把它当作你所创建对象的句柄好了。&lt;br /&gt;
+2.OpenGL为状态机，所以表现为一个个状态的设定。&lt;/p&gt;
+
+&lt;p&gt;创建对象，声明对象的方法为:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;//创建对象 不允许使用自定义名字  
+GLuint objectName;  
+glGenObject(1, &amp;amp;objectName);  
+
+// 设置对象状态
+glBindObject(GL_MODIFY, objectName);  
+glObjectParameteri(GL_MODIFY, GL_OBJECT_COUNT, 5);    
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;现在我们来创建一个VBO：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;GLuint VBO; 
+glGenBuffers(1, &amp;amp;VBO); 
+glBindBuffer(GL_ARRAY_BUFFER, VBO);
+glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);  
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;VBO全称为：Vertex Buffer Object,
+想创建一个Buffer，自然使用GenBuffers方法，第一个参数表示创建VBO的个数，比如我们可以使用：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;GLuint VBO[2];
+glGenBuffers(2, &amp;amp;VBO); 
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;来创建两个VBO，之后将VBO绑定在一块显存空间中，数组类型所存放的空间为&lt;code class=&quot;highlighter-rouge&quot;&gt;GL_ARRAY_BUFFER&lt;/code&gt;，绑定后，使用&lt;code class=&quot;highlighter-rouge&quot;&gt;glBufferData&lt;/code&gt;将数组存放在这块显存，第一个参数是我们希望把数据复制到哪儿，第二个参数指定我们希望传递给缓冲的数据的大小（字节）；用一个简单的sizeof计算出顶点数据就行。第三个参数是我们希望发送的真实数据。
+第四个参数指定了我们希望显卡如何管理给定的数据。有三种形式：&lt;br /&gt;
+&lt;code class=&quot;highlighter-rouge&quot;&gt;GL_STATIC_DRAW&lt;/code&gt;：数据不会或几乎不会改变。&lt;br /&gt;
+&lt;code class=&quot;highlighter-rouge&quot;&gt;GL_DYNAMIC_DRAW&lt;/code&gt;：数据会被改变很多。&lt;br /&gt;
+&lt;code class=&quot;highlighter-rouge&quot;&gt;GL_STREAM_DRAW&lt;/code&gt;：数据每次绘制时都会改变。&lt;/p&gt;
+
+&lt;p&gt;顶点缓冲对象创建完毕，接下来创建一个顶点着色器：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;GLuint vertexShader;
+vertexShader = glCreateShader(GL_VERTEX_SHADER);
+glShaderSource(vertexShader, 1, &amp;amp;vertexShaderSource, null);
+glCompileShader(vertexShader);  
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;glCreateShader&lt;/code&gt;创建一个着色器，返回其句柄，参数为着色器种类。&lt;code class=&quot;highlighter-rouge&quot;&gt;glShaderSource&lt;/code&gt;加载着色器代码到着色器对象上，第一个参数为着色器对象，第二参数指定了源码中有多少个字符串，第三个参数是顶点着色器真正的源码，第四个参数先设置为&lt;code class=&quot;highlighter-rouge&quot;&gt;NULL&lt;/code&gt;。&lt;code class=&quot;highlighter-rouge&quot;&gt;glCompileShader&lt;/code&gt;编译着色器。&lt;/p&gt;
+
+&lt;p&gt;偏离了方向，卒。&lt;br /&gt;
+看教程去了。&lt;/p&gt;
+</description>
+        <pubDate>Sat, 10 Dec 2016 00:00:00 +0800</pubDate>
+        <link>/2016/12/10/learn-opengl/</link>
+        <guid isPermaLink="true">/2016/12/10/learn-opengl/</guid>
+        
+        
+        <category>OpenGL</category>
+        
+        <category>CPP</category>
+        
+      </item>
     
       <item>
         <title>用Java再次写个1024的爬虫</title>
